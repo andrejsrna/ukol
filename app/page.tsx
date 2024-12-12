@@ -1,101 +1,117 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import UploadForm from "./components/UploadForm";
+import Link from "next/link";
+import { FiFile, FiUser, FiCalendar, FiChevronRight } from "react-icons/fi";
+
+interface Record {
+  id: number;
+  name: string;
+  age: number;
+  fileUrl: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [records, setRecords] = useState<Record[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    fetchRecords();
+  }, []);
+
+  const fetchRecords = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/records');
+      if (!response.ok) {
+        throw new Error('Failed to fetch records');
+      }
+      const data = await response.json();
+      setRecords(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error fetching records:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-50">
+        <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <div className="text-red-600 font-medium">Error: {error}</div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50">
+      <div className="max-w-7xl mx-auto p-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">Záznamy</h1>
+        <p className="text-gray-600 mb-8">Správa a organizácia vašich dokumentov</p>
+        
+        <UploadForm onUploadSuccess={fetchRecords} />
+
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Zoznam záznamov</h2>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+          ) : records.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+              <div className="text-gray-400 text-6xl mb-4">📄</div>
+              <p className="text-gray-600 text-lg">Žiadne záznamy neboli nájdené</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {records.map((record) => (
+                <div 
+                  key={record.id} 
+                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-indigo-100 rounded-full p-3">
+                        <FiUser className="w-6 h-6 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{record.name}</p>
+                        <div className="flex items-center text-gray-500 text-sm">
+                          <FiCalendar className="w-4 h-4 mr-1" />
+                          <span>{record.age} rokov</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <a 
+                      href={record.fileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 mb-4 group"
+                    >
+                      <FiFile className="w-4 h-4" />
+                      <span className="group-hover:underline">Zobraziť súbor</span>
+                    </a>
+
+                    <Link
+                      href={`/records/${record.id}`}
+                      className="flex items-center justify-between w-full px-4 py-3 bg-gray-50 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors duration-200"
+                    >
+                      <span className="font-medium">Zobraziť detail</span>
+                      <FiChevronRight className="w-5 h-5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
